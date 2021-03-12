@@ -33,25 +33,16 @@ class AppointmentSet(viewsets.ModelViewSet):
 		return queryset
 
 	def create(self, request):
-		if not request.POST._mutable:
-			request.POST._mutable = True
 
 		serializer = AppointmentSerialzers(data=request.data)
-		if self.request.data['appointment_date'].find('-'):
-			replace_date_format = self.request.data['appointment_date'].replace('-','/')
-			queryset = Appointment.objects.filter(appointment_date=replace_date_format,
+
+		queryset = Appointment.objects.filter(appointment_date=self.request.data['appointment_date'],
 									patient_name=self.request.data['patient_name'],
 									doctor_name=self.request.data['doctor_name'])
-			if queryset:
-				return Response({"Message":'Already exist on this date, please try to take another date.'}, status=status.HTTP_200_OK)
-			else:
-				if datetime.today().strftime('%d/%m/%Y') <= replace_date_format:
-					request.data['appointment_date'] = replace_date_format
-					if serializer.is_valid():
-						serializer.save()
-						return Response(serializer.data,status=status.HTTP_201_CREATED)
-				else:
-					return Response({"Message":'please enter the today date or future date'}, status=status.HTTP_400_BAD_REQUEST)
+		if queryset:
+			return Response({"Message":'Already exist on this date, please try to take another date.'}, status=status.HTTP_200_OK)
 		else:
-			return Response({"message":"Incorrect data format, should be YYYY-MM-DD"}, status=status.HTTP_400_BAD_REQUEST)
 
+			if serializer.is_valid():
+					serializer.save()
+					return Response(serializer.data,status=status.HTTP_201_CREATED)
